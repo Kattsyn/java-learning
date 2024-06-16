@@ -5,6 +5,7 @@ import java.util.*;
 public class Main {
     public static void main(String[] args) {
         List<Integer> list = new ArrayList<>();
+        //list.
         Scanner scanner = new Scanner(System.in);
         int i = 0;
         while(scanner.hasNextInt()) {
