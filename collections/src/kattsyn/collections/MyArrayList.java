@@ -18,6 +18,7 @@ public class MyArrayList<T> implements List<T> {
 
     public MyArrayList(int capacity) {
         this.array = new Object[capacity];
+        //стоит проверять корректность ввода capacity >= 1
         this.size = 0;
     }
 
@@ -44,6 +45,7 @@ public class MyArrayList<T> implements List<T> {
     @SuppressWarnings("unchecked")
     @NotNull
     public Iterator<T> iterator() {
+        //вынеси в отдельный класс, можно как внутренний статический
         return new Iterator<T>() {
             int cursor = 0;
 
@@ -64,6 +66,7 @@ public class MyArrayList<T> implements List<T> {
     }
 
     @SuppressWarnings("unchecked")
+    //для этого есть метод T get(int index)
     public T getValue(int index) {
         if (index >= size || index < 0) {
             throw new IndexOutOfBoundsException();
@@ -72,6 +75,8 @@ public class MyArrayList<T> implements List<T> {
     }
 
     private void increaseArrayLength() {
+        //в реальном ArrayList увеличивают не на какое-то кол-во а в 1.5 раза
+        //так лучше с точки зрения уменьшения кол-ва операций увеличения
         this.array = Arrays.copyOf(array, array.length + ADDITIONAL_ARRAY_CAPACITY);
     }
 
@@ -140,6 +145,7 @@ public class MyArrayList<T> implements List<T> {
             increaseArrayLength();
         }
         for (int i = size + 1; i > index; i--) {
+            //System.arraycopy
             array[i] = array[i - 1];
         }
         array[index] = value;
@@ -163,6 +169,7 @@ public class MyArrayList<T> implements List<T> {
         }
         T oldValue = (T) array[index];
         for (int i = index; i < size; i++) {
+            //System.arraycopy
             array[i] = array[i + 1];
         }
         size--;
@@ -196,6 +203,7 @@ public class MyArrayList<T> implements List<T> {
 
     @Override
     public @NotNull ListIterator<T> listIterator(int index) {
+        //вынеси отдельным классом как внутренний статический
         return new ListIterator<>() {
             int cursor = index;
             boolean calledNextOrPrev = false;
@@ -282,6 +290,7 @@ public class MyArrayList<T> implements List<T> {
     @SuppressWarnings({"unchecked"})
     public @NotNull List<T> subList(int fromIndex, int toIndex) {
         MyArrayList<T> newList = new MyArrayList<>();
+        // а если fromIndex > toIndex
         if (fromIndex >= 0 && toIndex < size) {
             for (int i = fromIndex; i < toIndex; i++) {
                 newList.add((T) array[i]);
@@ -291,6 +300,7 @@ public class MyArrayList<T> implements List<T> {
         }
         return newList;
     }
+
 
     public Object @NotNull [] toArray() {
         Object[] arr = new Object[size];
