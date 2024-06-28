@@ -1,3 +1,6 @@
+package kattsyn.collections;
+
+
 import java.util.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,7 +17,8 @@ public class MyArrayList<T> implements List<T> {
     }
 
     public MyArrayList(int capacity) {
-        this.array = new Object[capacity]; //стоит проверять корректность ввода capacity >= 1
+        this.array = new Object[capacity];
+        //стоит проверять корректность ввода capacity >= 1
         this.size = 0;
     }
 
