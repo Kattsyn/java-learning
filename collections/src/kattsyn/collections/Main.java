@@ -1,19 +1,26 @@
 package kattsyn.collections;
 
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
 
-        HashMap<String, String> map = new HashMap<>();
-        map.put("name", "ivan");
-        map.put("surname", "ivanov");
-        System.out.println(map);
-        hashMapTest();
+        linkedListTest();
 
+    }
+
+    public static void arrayListTest() {
+        MyArrayList<Integer> list = new MyArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            list.add(i);
+        }
+        System.out.println(list);
+        ListIterator<Integer> listIterator = list.listIterator();
+        for (int i = 0; i < 3; i++) {
+            listIterator.next();
+        }
+        System.out.println(listIterator.previousIndex());
     }
 
     public static void hashMapTest() {
@@ -48,19 +55,51 @@ public class Main {
         myLinkedList.addFirst(44);
         System.out.println("LinkedList after adding 44 in the beginning: " + myLinkedList);
 
-        myLinkedList.add(23, 0);
-        System.out.println("LinkedList after adding 23 on 0 index: " + myLinkedList);
+        myLinkedList.add(2, 23);
+        System.out.println("LinkedList after adding 23 on 2 index: " + myLinkedList);
 
-        myLinkedList.set(123, 3);
+        myLinkedList.set(3, 123);
         System.out.println("LinkedList after setting 123 on 3rd index: " + myLinkedList);
 
         myLinkedList.remove(4);
-        System.out.println("LinkedList after deleting 2nd element: " + myLinkedList);
+        System.out.println("LinkedList after deleting 4th element: " + myLinkedList);
         System.out.println();
 
         System.out.println("LinkedList output all elems: ");
-        for (int i = 0; i < myLinkedList.getSize(); i++) {
+        for (int i = 0; i < myLinkedList.size(); i++) {
             System.out.println(i + ": " + myLinkedList.getValue(i));
         }
+
+        System.out.println("---");
+        System.out.println("listIterator test: ");
+        ListIterator<Integer> listIterator = myLinkedList.listIterator();
+        while (listIterator.hasNext()) {
+            System.out.println(listIterator.next());
+        }
+        System.out.println("has previous: " + listIterator.hasPrevious());
+        while (listIterator.hasPrevious()) {
+            System.out.println(listIterator.previous());
+        }
+        System.out.println("---");
+        System.out.println("iterator test");
+        Iterator<Integer> iterator = myLinkedList.iterator();
+        while (iterator.hasNext()) {
+            System.out.println(iterator.next());
+        }
+        System.out.println("---");
+        System.out.println("toArray(T1[]) test");
+        System.out.println("Меньшей длины: " + Arrays.toString(myLinkedList.toArray(new Integer[2])));
+        System.out.println("Нужной длины: " + Arrays.toString(myLinkedList.toArray(new Integer[4])));
+        System.out.println("Большей длины: " + Arrays.toString(myLinkedList.toArray(new Integer[6])));
+        System.out.println("toArray() test");
+        System.out.println(Arrays.toString(myLinkedList.toArray()));
+
+        System.out.println("---");
+        System.out.println("RetainAll test: ");
+        Collection<Integer> collection = new ArrayList<>();
+        collection.add(44);
+        collection.add(23);
+        myLinkedList.retainAll(collection);
+        System.out.println(myLinkedList);
     }
 }
