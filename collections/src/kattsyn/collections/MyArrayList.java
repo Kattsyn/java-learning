@@ -2,12 +2,12 @@ package kattsyn.collections;
 
 
 import java.util.*;
+
 import org.jetbrains.annotations.NotNull;
 
 public class MyArrayList<T> implements List<T> {
 
     private static final int DEFAULT_ARRAY_CAPACITY = 20;
-    private static final int ADDITIONAL_ARRAY_CAPACITY = 20;
     private Object[] array;
     private int size;
 
@@ -17,20 +17,33 @@ public class MyArrayList<T> implements List<T> {
     }
 
     public MyArrayList(int capacity) {
+        if (capacity <= 0) {
+            throw new IllegalArgumentException();
+        }
         this.array = new Object[capacity];
-        //стоит проверять корректность ввода capacity >= 1
         this.size = 0;
     }
 
+    /**
+     * @return возвращает длину списка
+     */
     public int size() {
         return size;
     }
 
+    /**
+     * @return возвращает true, если список пуст
+     */
     @Override
     public boolean isEmpty() {
         return size == 0;
     }
 
+    /**
+     *
+     * @param o элемент, который будем искать в списке
+     * @return возвращает true, если элемент содержится в списке
+     */
     @Override
     public boolean contains(Object o) {
         for (int i = 0; i < size; i++) {
@@ -41,46 +54,135 @@ public class MyArrayList<T> implements List<T> {
         return false;
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    @NotNull
-    public Iterator<T> iterator() {
-        //вынеси в отдельный класс, можно как внутренний статический
-        return new Iterator<T>() {
-            int cursor = 0;
+    private class Itr implements Iterator<T> {
 
-            @Override
-            public boolean hasNext() {
-                return cursor != size;
-            }
+        int cursor = 0;
 
-            @Override
-            public T next() {
-                try {
-                    return (T) array[cursor++];
-                } catch (IndexOutOfBoundsException e) {
-                    throw new IndexOutOfBoundsException();
-                }
+        public Itr() {
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cursor != size;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public T next() {
+            try {
+                return (T) array[cursor++];
+            } catch (IndexOutOfBoundsException e) {
+                throw new IndexOutOfBoundsException();
             }
-        };
+        }
     }
 
-    @SuppressWarnings("unchecked")
-    //для этого есть метод T get(int index)
-    public T getValue(int index) {
-        if (index >= size || index < 0) {
-            throw new IndexOutOfBoundsException();
+
+    @Override
+    @NotNull
+    public Iterator<T> iterator() {
+        return new Itr();
+    }
+
+    private class ListItr extends Itr implements ListIterator<T> {
+
+        int cursor;
+        boolean calledNextOrPrev = false;
+        boolean calledRemoveOrAdd = false;
+        boolean calledAdd = false;
+
+        public ListItr(int index) {
+            this.cursor = index;
         }
-        return (T) array[index];
+
+        public ListItr() {
+            this(0);
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cursor != size;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public T next() {
+            if (!hasNext()) {
+                throw new IndexOutOfBoundsException();
+            }
+            T value = (T) array[cursor++];
+            calledNextOrPrev = true;
+            calledRemoveOrAdd = false;
+            calledAdd = false;
+            return value;
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return cursor != 0;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public T previous() {
+            if (!hasPrevious()) {
+                throw new NoSuchElementException();
+            }
+            T value = (T) array[--cursor];
+            calledNextOrPrev = true;
+            calledRemoveOrAdd = false;
+            calledAdd = false;
+            return value;
+        }
+
+        @Override
+        public int nextIndex() {
+            if (!hasNext()) {
+                return size;
+            }
+            return cursor;
+        }
+
+        @Override
+        public int previousIndex() {
+            if (!hasPrevious()) {
+                return -1;
+            }
+            return cursor - 1;
+        }
+
+        @Override
+        public void remove() {
+            if (calledNextOrPrev && !calledAdd) {
+                MyArrayList.this.remove(cursor);
+                calledNextOrPrev = false;
+            }
+        }
+
+        @Override
+        public void set(T t) {
+            if (calledNextOrPrev && !calledRemoveOrAdd) {
+                MyArrayList.this.set(cursor, t);
+            }
+        }
+
+        @Override
+        public void add(T t) {
+            MyArrayList.this.add(cursor, t);
+            calledRemoveOrAdd = true;
+            calledAdd = true;
+        }
     }
 
     private void increaseArrayLength() {
-        //в реальном ArrayList увеличивают не на какое-то кол-во а в 1.5 раза
-        //так лучше с точки зрения уменьшения кол-ва операций увеличения
-        this.array = Arrays.copyOf(array, array.length + ADDITIONAL_ARRAY_CAPACITY);
+        this.array = Arrays.copyOf(array, array.length * 3 / 2);
     }
 
-
+    /**
+     * Добавляет значение T в список. Если внутренний массив заполнился, то расширяет его
+     * @param value значение, которое будет добавлено в список
+     * @return возвращает true, если успешно добавил элемент
+     */
     public boolean add(T value) {
         if (size >= array.length) {
             increaseArrayLength();
@@ -90,6 +192,11 @@ public class MyArrayList<T> implements List<T> {
         return true;
     }
 
+    /**
+     * Удаляет первый элемент слева из списка со значением элемента "о".
+     * @param o элемент, который будет удален
+     * @return возвращает true, если элемент был найден и удален.
+     */
     @Override
     public boolean remove(Object o) {
         int index = indexOf(o);
@@ -101,42 +208,127 @@ public class MyArrayList<T> implements List<T> {
         }
     }
 
+    /**
+     * Проверяет, содержатся ли все элементы коллекции в списке.
+     * @param c коллекция, содержимое которой будем искать в нашем списке.
+     * @return возвращает true, если все элементы коллекции "с" содержатся в списке.
+     */
     @Override
     public boolean containsAll(@NotNull Collection<?> c) {
-        return false;
+        for (Object obj : c) {
+            if (!contains(obj)) {
+                return false;
+            }
+        }
+        return true;
     }
 
+    /**
+     * Добавляет элементы из коллекции "с" в список.
+     * @param c коллекция, содержимое которого будет добавлено в список.
+     * @return возвращает true, если исходный список был изменен.
+     */
     @Override
     public boolean addAll(@NotNull Collection<? extends T> c) {
-        return false;
+        if (c.isEmpty()) {
+            return false;
+        }
+        for (T value : c) {
+            add(value);
+        }
+        return true;
     }
 
+    /**
+     * Добавляет элементы из коллекции "с" в список, начиная с индекса index.
+     * @param index индекс, начиная с которого будут добавлены элементы.
+     * @param c коллекция, содержимое которого будет добавлено в список.
+     * @return возвращает true, если исходный список был изменен.
+     */
     @Override
     public boolean addAll(int index, @NotNull Collection<? extends T> c) {
-        return false;
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (c.isEmpty()) {
+            return false;
+        }
+        int i = index;
+        for (T value : c) {
+            add(i++, value);
+        }
+        return true;
     }
 
+    /**
+     * Удаляет элементы из списка, которые содержатся в коллекции "с".
+     * @param c коллекция, содержащая элементы, которые будут удалены из списка.
+     * @return возвращает true, если исходный список был изменен.
+     */
     @Override
     public boolean removeAll(@NotNull Collection<?> c) {
-        return false;
+        if (c.isEmpty()) {
+            return false;
+        }
+        for (Object obj : c) {
+            remove(obj);
+        }
+        return true;
     }
 
+    /**
+     * Удаляет все элементы, которых нет в передаваемой коллекции.
+     *
+     * @param c коллекция, содержащая элементы, которые будут сохранены
+     * @return возвращает true, если список был изменен, иначе false
+     */
     @Override
     public boolean retainAll(@NotNull Collection<?> c) {
-        return false;
+        /*
+        2 случая когда не изменяется исходный список
+        1. list = c
+        2. c.size = 0
+        Тк equals может быть слишком затратен для проверки равны ли коллекции,
+        выбрал добавить лишнюю переменную
+         */
+        boolean haveChanged = false;
+        for (Object obj : array) {
+            if (!c.contains(obj)) {
+                remove(obj);
+                haveChanged = true;
+            }
+        }
+        return haveChanged;
     }
 
+    /**
+     * Удаляет все элементы списка.
+     */
     @Override
     public void clear() {
         this.array = new Object[DEFAULT_ARRAY_CAPACITY];
         this.size = 0;
     }
 
+    /**
+     * Функция, для получения значения по индексу.
+     * @param index индекс элемента, которое нужно вернуть
+     * @return значение элемента по индексу
+     */
     @Override
+    @SuppressWarnings("unchecked")
     public T get(int index) {
-        return null;
+        if (index >= size || index < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        return (T) array[index];
     }
 
+    /**
+     * Добавляет элемент по индексу.
+     * @param index индекс, на место которого встанет значение value.
+     * @param value элемент, который будет вставлен.
+     */
     public void add(int index, T value) {
         if (index >= size || index < 0) {
             throw new IndexOutOfBoundsException();
@@ -144,14 +336,17 @@ public class MyArrayList<T> implements List<T> {
         if (size + 1 == array.length) {
             increaseArrayLength();
         }
-        for (int i = size + 1; i > index; i--) {
-            //System.arraycopy
-            array[i] = array[i - 1];
-        }
+        System.arraycopy(array, index, array, index + 1, size - index);
         array[index] = value;
         size++;
     }
 
+    /**
+     * Меняет значение элемента по индексу.
+     * @param index индекс элемента, который нужно заменить
+     * @param value значение, которое встанет на место предыдущего.
+     * @return возвращает прошлое значение элемента.
+     */
     @SuppressWarnings("unchecked")
     public T set(int index, T value) {
         if (index >= size || index < 0) {
@@ -162,20 +357,27 @@ public class MyArrayList<T> implements List<T> {
         return oldValue;
     }
 
+    /**
+     * Удаляет элемент по индексу.
+     * @param index индекс элемента, который будет удален.
+     * @return возвращает значение элемента, которое было на месте index.
+     */
     @SuppressWarnings("unchecked")
     public T remove(int index) {
         if (index >= size || index < 0) {
             throw new IndexOutOfBoundsException();
         }
         T oldValue = (T) array[index];
-        for (int i = index; i < size; i++) {
-            //System.arraycopy
-            array[i] = array[i + 1];
-        }
+        System.arraycopy(array, index + 1, array, index, size - index);
         size--;
         return oldValue;
     }
 
+    /**
+     * Ищет элемент в списке. Возвращает первое вхождение слева.
+     * @param o значение элемента, которое мы ищем.
+     * @return возвращает index элемента. Либо -1, если элемент не найден.
+     */
     @Override
     public int indexOf(Object o) {
         for (int i = 0; i < size; i++) {
@@ -186,6 +388,11 @@ public class MyArrayList<T> implements List<T> {
         return -1;
     }
 
+    /**
+     * Ищет элемент в списке. Возвращает первое вхождение справа.
+     * @param o значение элемента, которое мы ищем.
+     * @return возвращает index элемента. Либо -1, если элемент не найден.
+     */
     @Override
     public int lastIndexOf(Object o) {
         for (int i = size - 1; i >= 0; i--) {
@@ -198,100 +405,19 @@ public class MyArrayList<T> implements List<T> {
 
     @Override
     public @NotNull ListIterator<T> listIterator() {
-        return listIterator(0);
+        return new ListItr();
     }
 
     @Override
     public @NotNull ListIterator<T> listIterator(int index) {
-        //вынеси отдельным классом как внутренний статический
-        return new ListIterator<>() {
-            int cursor = index;
-            boolean calledNextOrPrev = false;
-            boolean calledRemoveOrAdd = false;
-            boolean calledAdd = false;
-
-            @Override
-            public boolean hasNext() {
-                return cursor != size;
-            }
-
-            @Override
-            @SuppressWarnings("unchecked")
-            public T next() {
-                if (!hasNext()) {
-                    throw new IndexOutOfBoundsException();
-                }
-                T value = (T) array[cursor++];
-                calledNextOrPrev = true;
-                calledRemoveOrAdd = false;
-                calledAdd = false;
-                return value;
-            }
-
-            @Override
-            public boolean hasPrevious() {
-                return cursor != 0;
-            }
-
-            @Override
-            @SuppressWarnings("unchecked")
-            public T previous() {
-                if (!hasPrevious()) {
-                    throw new NoSuchElementException();
-                }
-                T value = (T) array[--cursor];
-                calledNextOrPrev = true;
-                calledRemoveOrAdd = false;
-                calledAdd = false;
-                return value;
-            }
-
-            @Override
-            public int nextIndex() {
-                if (!hasNext()) {
-                    return size;
-                }
-                return cursor;
-            }
-
-            @Override
-            public int previousIndex() {
-                if (!hasPrevious()) {
-                    return -1;
-                }
-                return cursor - 1;
-            }
-
-            @Override
-            public void remove() {
-                if (calledNextOrPrev && !calledAdd) {
-                    MyArrayList.this.remove(cursor);
-                    calledNextOrPrev = false;
-                }
-            }
-
-            @Override
-            public void set(T t) {
-                if (calledNextOrPrev && !calledRemoveOrAdd) {
-                    MyArrayList.this.set(cursor, t);
-                }
-            }
-
-            @Override
-            public void add(T t) {
-                MyArrayList.this.add(cursor, t);
-                calledRemoveOrAdd = true;
-                calledAdd = true;
-            }
-        };
+        return new ListItr(index);
     }
 
     @Override
     @SuppressWarnings({"unchecked"})
     public @NotNull List<T> subList(int fromIndex, int toIndex) {
         MyArrayList<T> newList = new MyArrayList<>();
-        // а если fromIndex > toIndex
-        if (fromIndex >= 0 && toIndex < size) {
+        if (fromIndex >= 0 && toIndex < size && fromIndex < toIndex) {
             for (int i = fromIndex; i < toIndex; i++) {
                 newList.add((T) array[i]);
             }
