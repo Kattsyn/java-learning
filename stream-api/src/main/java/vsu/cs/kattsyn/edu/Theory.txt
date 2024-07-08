@@ -1,0 +1,112 @@
+Stream - поток, последовательность элементов, потенциально бесконечная. С возможностью применять к ней простые или сложные,
+многоэтапные преобразования, который обычно делаем с помощью циклов и условных операторов.
+
+Stream - generic interface, лежащий в пакете java.util.stream. Также его братья-близнецы LongStream, IntStream и тд, предназначенные для работы с примитивами.
+Отличается от итератора тем, что итератор - очень простой объект, который может только выдавать элементы по одному. Stream гораздо более навороченный, имеющий большое кол-во методов.
+
+Сравнивая с коллекциями, коллекции предназначены для хранения элементов и являются конечными, стрим может быть бесконечным. Коллекции можно менять.
+
+Пример:
+int sum = IntStream.iterate(1, n -> n + 1) //перебирает целые числа, начиная с 1, и увеличивает на 1 потом //1-я часть - получение стрима (потока)
+                .filter(n -> n % 10 == 5) //делает выборку, фильтрует (грубо говоря if (n % 10 == 5) {...} //2-я часть - 0 или более промежуточных преобразований
+                .limit(10) //ограничивает кол-во выходных после фильтра параметров //стрим их просто запоминает, но пока не выполняет
+                .map(n -> n * n) //возводит отобранные значения в квадрат
+                .sum(); //суммирует все выходные значения //3-я часть - единственная терминальная операция, запускающая весь процесс вычислений
+                //также в конце можно закрыть поток методом .close(), используется тогда, когда открыт поток извне (база данных, файл и тд)
+Способы получения потока:
+Set<String> vocabulary = ...;
+Stream<String> stream1 = vocabulary.stream();
+
+BufferedReader reader = ...;
+Stream<String> stream2 = reader.lines() //вернет поток строчек из файла
+
+//получение содержимого из директорий
+Path path = ...;
+Stream<Path> stream3 = Files.list(path); //вернет содержимое выбранной директории (path)
+Stream<Path> stream3 = Files.walk(path); //обойдет все вложенные директории и выдаст содержимое всех
+//двое вышеперечисленных нужно закрывать, также их можно использовать в блоке try-with-resources
+
+IntStream chars = "hello".chars(); //тк нет отдельного потока для char'ов
+
+DoubleStream randomNumbers = DoubleStream.generate(Math::random); //generate принимает Supplier - поставщик, предоставляет значения, на вход ничего не принимает.
+
+IntStream integers = IntStream.iterate(0, n -> n + 1);
+.iterate(T seed, Predicate hasNext, UnaryOperator f) -  Появился в Java 9. Всё то же самое, только добавляется ещё один аргумент hasNext: если он возвращает false, то стрим завершается.
+Это очень похоже на цикл for:
+Stream.iterate(2, x -> x < 25, x -> x + 6)
+    .forEach(System.out::println);
+
+IntStream = smallIntegers = IntStream.range(0, 100); //0..99
+IntStream = smallIntegers = IntStream.rangeClosed(0, 100); //0..100 //нужно, чтобы избежать переполнения. Например, если хотим передать Integer.MAX_VALUE
+
+IntStream combinedStream = IntStream.concat(stream1, stream2); //конкатенация потоков
+
+IntStream empty = IntStream.empty(); //пустой поток
+
+double[] array = ...;
+DoubleStream streamFromArray = Arrays.stream(array); //поток из массива
+
+IntStream streamOfElements = IntStream.of(2, 4, 6, 8, 10);
+
+
+Stream.Builder<Integer> streamBuilder = Stream.<Integer>builder()
+        .add(0)
+        .add(1);
+for (int i = 2; i <= 8; i += 2) {
+    streamBuilder.accept(i);
+}
+streamBuilder
+    .add(9)
+    .add(10)
+    .build()
+    .forEach(System.out::println);
+// 0, 1, 2, 4, 6, 8, 9, 10
+
+
+--Промежуточные операции--
+
+.filter(n -> n > 100) //принимает Predicate
+.mapToObj(Integer::toString) //Принимает Function, принимает функцию, которая каждый объект приводит к какому-то другому типу
+.flatMapToInt(s -> s.chars()) //Принимает F : Stream, функция, возвращающая поток, конкатенирует все полученные стримы. На выходе обычный IntStream из всех потоков s.chars()
+.distinct() //убирает дубликаты элементов
+.sorted() //сортирует, если не для примитивных типов Stream, то туда нужно передать компаратор
+.skip(3) //позволяет пропустить какое-то кол-во первых элементов
+.peek(System.out::println) //принимает Consumer, можно использовать для отладки, чтобы узнать какие элементы летают на каком-то этапе стрима
+.limit(2) //задает ограничение на выходе потока (грубо говоря только 2 элемента дойдут до следующих операций)
+
+
+--Терминальные операции--
+
+IntStream stream1 = ...;
+stream1.forEach(System.out::println); //Принимает Consumer, которому будут отданы все элементы потока
+
+IntStream stream1 = ...;
+OptionalInt result = stream2.findFirst(); //Возвращает первый в порядке следования элемент из стрима (возвращает OptionalAny, потому что в потоке может ничего и не лежать)
+OptionalInt result = stream2.findAny(); //Вернется тот элемент, какой стриму удобнее
+
+Stream<String> stream3 = ...;
+boolean allStringsAreAtLeast10Chars = stream3.allMatch(s -> s.length() > 10); //принимает Predicate, позволяет узнать все ли элементы потока удовлетворяют условию
+boolean allStringsAreAtLeast10Chars = stream3.anyMatch(s -> s.length() > 10); //хотя бы один удовлетворяет предикату
+boolean allStringsAreAtLeast10Chars = stream3.noneMatch(s -> s.length() > 10); //ни один не удовлетворяет предикату
+
+Stream<String> stream1 = ...;
+Optional<String> minString = stream1.min(Comparator:comparing(String::length, Integer::compare)); //возвращает минимальный элемент из потока, принимает Comparator для не примитивов.
+Optional<String> minString = stream1.max(Comparator:comparing(String::length, Integer::compare)); //возвращает максимальный элемент из потока, принимает Comparator для не примитивов.
+
+IntStream stream2 = ...;
+int count = stream2.count(); //возвращает кол-во элементов в стриме
+
+IntStream stream3 = ...;
+int sum = stream3.sum(); //сумму элементов в стриме
+
+Stream<String> stream1 = ...;
+List<String> list = stream1.collect(Collectors.toList()); //позволяет собрать элементы стрима в какое-то новое хранилище. Тип, в который собирается
+поток определяется типом передаваемого значения класса коллектора. (.toList() в список).
+
+Stream<BigInteger> bigInts = ...;
+BigInteger sum = bigInts.reduce(BigInteger.ZERO, BigInteger::add); //позволяет вычислить свертку вычисления стрима, то есть результат применения
+некоторого бинарного оператора к каждой паре элементов стрима, пока от стрима не останется один единственный элемент, если список пуст,
+то возвращается некоторое нулевое значение (в нашем случае первый параметр - нулевое значение, второй - метод, который применяется к паре чисел)
+
+Терминальную операцию можно вызвать только один раз, затем метод считается непригодным.
+Если хотим несколько, то нужно создавать новые стримы, с промежуточными операциями и затем применять опять терминальную операцию
