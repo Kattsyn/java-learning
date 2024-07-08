@@ -12,10 +12,33 @@ public class Main {
 
         List<?> list = animalList;
 
+        List<Dog> dogs = new ArrayList<>();
+        dogs.add(new Dog("dogname1"));
+        dogs.add(new Labrador("labrador1"));
+
+        List<Labrador> labradors = new ArrayList<>();
+        labradors.add(new Labrador("labrador1.2"));
+        labradors.add(new Labrador("labrador1.fff2"));
+        //labradors.add(new Dog("labrador1.2"));
+
         //list.add(new Animal("Name")); error
         //list.add((Object) new Integer(5)); error
         System.out.println(list.get(0)); //то есть при <?> мы можем только получать объекты и работать как с Object'ом.
+
+        //method(animalList);
+        method(dogs);
+        method(labradors); //то есть при <? extends Dog> положить можем не выше Dog, а при работе с таким списком другие приколы.
+        //Добавлять ничего не можем, кроме null, а вытаскивать можем от класса Dog и выше.
+
         method2(animalList);
+        method2(dogs);
+        //method2(labradors); //то есть при <? super Dog> можем класть списки, которые либо Dog, либо выше.
+        //При работе внутри метода, мы сможем вытаскивать только элементы в виде Object, можно закастить до собаки, но если вдруг там будет кошка,
+        //то вылетит ClassCastException
+        //а класть что угодно, что Dog или ниже (например, Labrador)
+
+
+
     }
 
     public static void method(List<? extends Dog> list) {
