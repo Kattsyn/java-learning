@@ -23,11 +23,9 @@ public class MailService<T> implements Consumer<Sendable<T>> {
 
     @Override
     public void accept(Sendable<T> tSendable) {
-        if (mailBox.containsKey(tSendable.getTo())) {
-            mailBox.get(tSendable.getTo()).add(tSendable.getContent());
-        } else {
+        if (!mailBox.containsKey(tSendable.getTo())) {
             mailBox.put(tSendable.getTo(), new ArrayList<>());
-            mailBox.get(tSendable.getTo()).add(tSendable.getContent());
         }
+        mailBox.get(tSendable.getTo()).add(tSendable.getContent());
     }
 }

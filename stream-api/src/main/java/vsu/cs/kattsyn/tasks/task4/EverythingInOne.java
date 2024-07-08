@@ -99,20 +99,8 @@ public class EverythingInOne {
     }
 
 
-    public static class MailBox<K, V> extends HashMap<K, V> {
 
-        @Override
-        @SuppressWarnings("unchecked")
-        public V get(Object key) {
-            if (this.containsKey(key)) {
-                return super.get(key);
-            } else {
-                return (V) Collections.<String>emptyList();
-            }
-        }
-    }
-
-    public static interface Sendable<T> {
+    public interface Sendable<T> {
 
         String getFrom();
 
@@ -147,7 +135,16 @@ public class EverythingInOne {
 
     public static class MailService<T> implements Consumer<Sendable<T>> {
 
-        private Map<String, List<T>> mailBox = new MailBox<>();
+        private Map<String, List<T>> mailBox = new HashMap<>() {
+            @Override
+            public List<T> get(Object key) {
+                if (this.containsKey(key)) {
+                    return super.get(key);
+                } else {
+                    return Collections.emptyList();
+                }
+            }
+        };
 
         public Map<String, List<T>> getMailBox() {
             return mailBox;
@@ -156,12 +153,10 @@ public class EverythingInOne {
 
         @Override
         public void accept(Sendable<T> tSendable) {
-            if (mailBox.containsKey(tSendable.getTo())) {
-                mailBox.get(tSendable.getTo()).add(tSendable.getContent());
-            } else {
+            if (!mailBox.containsKey(tSendable.getTo())) {
                 mailBox.put(tSendable.getTo(), new ArrayList<>());
-                mailBox.get(tSendable.getTo()).add(tSendable.getContent());
             }
+            mailBox.get(tSendable.getTo()).add(tSendable.getContent());
         }
     }
 
