@@ -3,7 +3,7 @@ package vsu.cs.kattsyn.tasks.task4;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class Test {
+public class EverythingInOne {
     public static void main(String[] args) {
         // Random variables
         String randomFrom = "..."; // Некоторая случайная строка. Можете выбрать ее самостоятельно.
