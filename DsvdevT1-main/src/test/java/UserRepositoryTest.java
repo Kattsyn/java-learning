@@ -3,6 +3,7 @@ import com.dsvdev.repository.UserJdbcRepository;
 import com.dsvdev.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserRepositoryTest {
@@ -40,7 +41,7 @@ public class UserRepositoryTest {
             userRepository.createUsersTable();
             userRepository.saveUser(testName, testLastName, testAge);
 
-            User user = userRepository.getAllUsers().getFirst();
+            User user = userRepository.getAllUsers().get(0);
 
             if (!testName.equals(user.getName())
                     || !testLastName.equals(user.getLastName())
