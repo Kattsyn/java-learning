@@ -26,31 +26,15 @@ public class Util {
     public static SessionFactory getSessionFactory() {
         if (sessionFactory == null) {
             try {
-
                 Configuration configuration = new Configuration().configure();
                 configuration.addAnnotatedClass(User.class);
                 StandardServiceRegistryBuilder builder = new StandardServiceRegistryBuilder()
                         .applySettings(configuration.getProperties());
                 sessionFactory = configuration.buildSessionFactory(builder.build());
-
-
-
-/*
-                sessionFactory = new Configuration()
-                        .configure()
-                        .addAnnotatedClass(User.class)
-                        .buildSessionFactory();
-
- */
             } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
         }
         return sessionFactory;
     }
-
-    public static EntityManagerFactory getEntityManagerFactory(){
-        return null;
-    }
-
 }
